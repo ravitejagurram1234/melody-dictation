@@ -1,10 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { GameService } from '../../core/services/game.service';
 import { ProgressService } from '../../core/services/progress.service';
 import {
-  INSTRUMENTS, LEVEL_CONFIGS, InstrumentType, DifficultyLevel, InstrumentOption, LevelConfig
+  INSTRUMENTS, LEVEL_CONFIGS, OCTAVE_OPTIONS,
+  InstrumentType, DifficultyLevel, OctaveId
 } from '../../shared/models/game.model';
 
 @Component({
@@ -72,6 +72,22 @@ import {
               @if (getHighScore(lvl.level) > 0) {
                 <span class="level-high">Best: {{ getHighScore(lvl.level) }}</span>
               }
+            </button>
+          }
+        </div>
+      </section>
+
+      <!-- Octave Selection -->
+      <section class="section">
+        <h2 class="section-title">Choose Octave</h2>
+        <div class="octave-grid">
+          @for (oct of octaves; track oct.id) {
+            <button
+              class="octave-card"
+              [class.selected]="selectedOctave() === oct.id"
+              (click)="selectOctave(oct.id)">
+              <span class="oct-label">{{ oct.label }}</span>
+              <span class="oct-desc">{{ oct.description }}</span>
             </button>
           }
         </div>
@@ -274,6 +290,47 @@ import {
       }
     }
 
+    .octave-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .octave-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 12px 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      transition: all var(--transition-fast);
+
+      &:hover {
+        background: var(--bg-elevated);
+        border-color: var(--border-active);
+        transform: translateY(-2px);
+      }
+
+      &.selected {
+        background: var(--accent-glow);
+        border-color: var(--accent-primary);
+        box-shadow: var(--shadow-glow);
+      }
+
+      .oct-label {
+        font-size: 0.82rem;
+        font-weight: 600;
+        font-family: var(--font-mono);
+        color: var(--text-primary);
+      }
+      .oct-desc {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+      }
+    }
+
     .btn-start {
       display: flex;
       align-items: center;
@@ -302,9 +359,11 @@ import {
 export class HomeComponent {
   instruments = INSTRUMENTS;
   levels = LEVEL_CONFIGS;
+  octaves = OCTAVE_OPTIONS;
 
   selectedInstrument = signal<InstrumentType>('piano');
   selectedLevel = signal<DifficultyLevel>(1);
+  selectedOctave = signal<OctaveId>(4);
 
   constructor(
     private gameService: GameService,
@@ -319,11 +378,15 @@ export class HomeComponent {
     this.selectedLevel.set(level);
   }
 
+  selectOctave(id: OctaveId): void {
+    this.selectedOctave.set(id);
+  }
+
   getHighScore(level: number): number {
     return this.progress.getHighScore(level, this.selectedInstrument());
   }
 
   startGame(): void {
-    this.gameService.startGame(this.selectedLevel(), this.selectedInstrument());
+    this.gameService.startGame(this.selectedLevel(), this.selectedInstrument(), this.selectedOctave());
   }
 }

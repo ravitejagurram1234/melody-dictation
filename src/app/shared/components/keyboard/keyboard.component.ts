@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { isBlackKey, midiToNoteName } from '../../models/game.model';
 
@@ -119,7 +119,7 @@ interface KeyInfo {
     }
   `]
 })
-export class KeyboardComponent {
+export class KeyboardComponent implements OnInit, OnChanges {
   @Input() startMidi: number = 48; // C3
   @Input() endMidi: number = 84;   // C6
   @Input() activeNotes: number[] = [];

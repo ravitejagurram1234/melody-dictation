@@ -15,6 +15,25 @@ export const INSTRUMENTS: InstrumentOption[] = [
   { id: 'synth-pad', name: 'Synth Pad', icon: '🎧', description: 'Smooth electronic' }
 ];
 
+// ─── Octave selection ───
+export type OctaveId = 2 | 3 | 4 | 5 | 6;
+
+export interface OctaveOption {
+  id: OctaveId;
+  name: string;
+  label: string;
+  description: string;
+  baseMidi: number; // C of that octave
+}
+
+export const OCTAVE_OPTIONS: OctaveOption[] = [
+  { id: 2, name: 'Octave 2', label: 'C2 – B2', description: 'Very low', baseMidi: 36 },
+  { id: 3, name: 'Octave 3', label: 'C3 – B3', description: 'Low', baseMidi: 48 },
+  { id: 4, name: 'Octave 4', label: 'C4 – B4', description: 'Middle (default)', baseMidi: 60 },
+  { id: 5, name: 'Octave 5', label: 'C5 – B5', description: 'High', baseMidi: 72 },
+  { id: 6, name: 'Octave 6', label: 'C6 – B6', description: 'Very high', baseMidi: 84 },
+];
+
 export type DifficultyLevel = 1 | 2 | 3 | 4 | 5;
 
 export interface LevelConfig {
@@ -22,12 +41,13 @@ export interface LevelConfig {
   name: string;
   description: string;
   noteCount: number;
-  noteRange: { min: number; max: number }; // MIDI note numbers
+  noteRange: { min: number; max: number }; // MIDI note numbers (default, octave 4 based)
   tempo: number; // ms per note
   maxReplays: number;
   allowSharps: boolean;
 }
 
+// Default ranges are based around octave 4 (middle C = 60)
 export const LEVEL_CONFIGS: LevelConfig[] = [
   {
     level: 1, name: 'Beginner', description: '3 notes · C major · slow tempo',
@@ -56,9 +76,22 @@ export const LEVEL_CONFIGS: LevelConfig[] = [
   }
 ];
 
+/** Shift a level's note range to a chosen octave. Default ranges are centred on octave 4 (baseMidi 60). */
+export function shiftRangeToOctave(range: { min: number; max: number }, octave: OctaveId): { min: number; max: number } {
+  const defaultBase = 60; // C4
+  const targetBase = OCTAVE_OPTIONS.find(o => o.id === octave)!.baseMidi;
+  const offset = targetBase - defaultBase;
+  // Clamp to valid MIDI range 21 (A0) – 108 (C8)
+  return {
+    min: Math.max(21, range.min + offset),
+    max: Math.min(108, range.max + offset)
+  };
+}
+
 export interface GameState {
   level: DifficultyLevel;
   instrument: InstrumentType;
+  octave: OctaveId;
   round: number;
   totalRounds: number;
   melody: number[];
@@ -67,6 +100,7 @@ export interface GameState {
   score: number;
   isPlaying: boolean;
   phase: 'listening' | 'input' | 'feedback';
+  noteRange: { min: number; max: number }; // actual range after octave shift
 }
 
 export interface RoundResult {

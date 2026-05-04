@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { GameService } from '../../core/services/game.service';
 import { KeyboardComponent } from '../../shared/components/keyboard/keyboard.component';
-import { LEVEL_CONFIGS, midiToNoteName } from '../../shared/models/game.model';
+import { midiToNoteName } from '../../shared/models/game.model';
 
 @Component({
   selector: 'app-game',
@@ -285,8 +285,7 @@ export class GameComponent {
   keyboardRange = computed(() => {
     const s = this.game.state();
     if (!s) return { min: 48, max: 84 };
-    const config = LEVEL_CONFIGS[s.level - 1];
-    return { min: config.noteRange.min, max: config.noteRange.max };
+    return { min: s.noteRange.min, max: s.noteRange.max };
   });
 
   feedbackIcon = computed(() => {

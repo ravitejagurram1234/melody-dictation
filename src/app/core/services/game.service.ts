@@ -3,8 +3,8 @@ import { Router } from '@angular/router';
 import { AudioService } from './audio.service';
 import { ProgressService } from './progress.service';
 import {
-  GameState, DifficultyLevel, InstrumentType,
-  LEVEL_CONFIGS, RoundResult, GameResult, isBlackKey
+  GameState, DifficultyLevel, InstrumentType, OctaveId,
+  LEVEL_CONFIGS, RoundResult, GameResult, isBlackKey, shiftRangeToOctave
 } from '../../shared/models/game.model';
 
 @Injectable({ providedIn: 'root' })
@@ -31,9 +31,10 @@ export class GameService {
     private router: Router
   ) {}
 
-  startGame(level: DifficultyLevel, instrument: InstrumentType): void {
+  startGame(level: DifficultyLevel, instrument: InstrumentType, octave: OctaveId = 4): void {
     const config = LEVEL_CONFIGS[level - 1];
-    const melody = this.generateMelody(config.noteCount, config.noteRange, config.allowSharps);
+    const noteRange = shiftRangeToOctave(config.noteRange, octave);
+    const melody = this.generateMelody(config.noteCount, noteRange, config.allowSharps);
 
     this.roundResults.set([]);
     this.feedbackNotes.set([]);
@@ -41,6 +42,7 @@ export class GameService {
     this.state.set({
       level,
       instrument,
+      octave,
       round: 1,
       totalRounds: this.ROUNDS_PER_GAME,
       melody,
@@ -48,11 +50,14 @@ export class GameService {
       replaysLeft: config.maxReplays,
       score: 0,
       isPlaying: false,
-      phase: 'listening'
+      phase: 'listening',
+      noteRange
     });
 
-    // Auto-play the melody after a brief pause
-    setTimeout(() => this.playCurrentMelody(), 600);
+    // Navigate to game route then auto-play
+    this.router.navigate(['/game']).then(() => {
+      setTimeout(() => this.playCurrentMelody(), 600);
+    });
   }
 
   async playCurrentMelody(): Promise<void> {
@@ -139,7 +144,8 @@ export class GameService {
 
   private nextRound(s: GameState, roundScore: number): void {
     const config = LEVEL_CONFIGS[s.level - 1];
-    const newMelody = this.generateMelody(config.noteCount, config.noteRange, config.allowSharps);
+    const noteRange = shiftRangeToOctave(config.noteRange, s.octave);
+    const newMelody = this.generateMelody(config.noteCount, noteRange, config.allowSharps);
 
     this.feedbackNotes.set([]);
     this.state.set({
@@ -150,7 +156,8 @@ export class GameService {
       replaysLeft: config.maxReplays,
       score: s.score + roundScore,
       isPlaying: false,
-      phase: 'listening'
+      phase: 'listening',
+      noteRange
     });
 
     setTimeout(() => this.playCurrentMelody(), 800);
